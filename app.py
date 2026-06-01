@@ -259,7 +259,6 @@ def simular():
             t_sim=t_sim, t_warm=t_warm,
             semilla_base=semilla_base,
             usar_prioridad=usar_prioridad,
-            verbose=False,
         )
 
         # 3. Analítico
@@ -280,7 +279,6 @@ def simular():
             mu=mu, t_sim=t_sim, t_warm=t_warm,
             N_replicas=N_sens, semilla_base=semilla_base,
             lista_c=lista_c_s, lista_lam=lista_lam_s,
-            verbose=False,
         )
 
         # 5. c óptimo

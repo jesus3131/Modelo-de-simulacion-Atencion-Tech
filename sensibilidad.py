@@ -37,7 +37,7 @@ def analisis_sensibilidad(mu, t_sim, t_warm, N_replicas, semilla_base,
                     N=N_replicas, lam=lam_val, mu=mu, c=c_val,
                     t_sim=t_sim, t_warm=t_warm,
                     semilla_base=semilla_base + (i + j * len(lista_lam)),
-                    usar_prioridad=usar_prioridad, verbose=False,
+                    usar_prioridad=usar_prioridad,
                 )
                 wq_combo = res["wq_media"]
                 rho_combo = res["rho_media"]
@@ -81,7 +81,7 @@ def encontrar_c_optimo(lam, mu, t_sim, t_warm, N_replicas, semilla_base,
             N=N_replicas, lam=lam, mu=mu, c=c,
             t_sim=t_sim, t_warm=t_warm,
             semilla_base=semilla_base + c,
-            usar_prioridad=usar_prioridad, verbose=False,
+            usar_prioridad=usar_prioridad,
         )
 
         wq = res["wq_media"]
