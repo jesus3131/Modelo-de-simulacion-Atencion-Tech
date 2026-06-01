@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TechClassUC — Simulación M/M/c</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --border: #1e2d45;
+    --accent: #00d4ff;
+    --accent2: #7c3aed;
+    --accent3: #10b981;
+    --warn: #f59e0b;
+    --danger: #ef4444;
+    --text: #e2e8f0;
+    --text-dim: #64748b;
+    --text-muted: #334155;
+    --mono: 'Space Mono', monospace;
+    --sans: 'Syne', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container { max-width: 1400px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+  /* Header */
+  header {
+    padding: 32px 0 24px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 40px;
+  }
+
+  .header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .logo-block {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .logo-icon {
+    width: 48px; height: 48px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    box-shadow: 0 0 24px rgba(0,212,255,0.3);
+  }
+
+  .logo-text h1 {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    background: linear-gradient(90deg, var(--accent), #a78bfa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .logo-text p {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  .status-badge {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  .status-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent3);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* Layout */
+  .layout {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+
+  /* Panels */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+  }
+
+  .panel-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    margin-bottom: 20px;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .panel-title::before {
+    content: '';
+    display: inline-block;
+    width: 3px; height: 14px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+
+  /* Form controls */
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .form-group.full { grid-column: 1 / -1; }
+
+  label {
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+  }
+
+  .label-with-hint {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .hint {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent);
+    opacity: 0.6;
+  }
+
+  input[type="number"], input[type="range"] {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 14px;
+    padding: 8px 12px;
+    width: 100%;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  input[type="number"]:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(0,212,255,0.1);
+  }
+
+  input[type="range"] {
+    padding: 4px 0;
+    cursor: pointer;
+    accent-color: var(--accent);
+  }
+
+  .range-value {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--accent);
+    text-align: right;
+    margin-top: -2px;
+  }
+
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-top: 1px solid var(--border);
+    margin-top: 8px;
+  }
+
+  .toggle-label {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  .toggle {
+    position: relative;
+    width: 40px; height: 22px;
+  }
+
+  .toggle input { opacity: 0; width: 0; height: 0; }
+
+  .toggle-slider {
+    position: absolute; inset: 0;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+
+  .toggle-slider::before {
+    content: '';
+    position: absolute;
+    height: 14px; width: 14px;
+    left: 3px; top: 3px;
+    background: var(--text-dim);
+    border-radius: 50%;
+    transition: 0.2s;
+  }
+
+  .toggle input:checked + .toggle-slider {
+    background: rgba(0,212,255,0.15);
+    border-color: var(--accent);
+  }
+
+  .toggle input:checked + .toggle-slider::before {
+    transform: translateX(18px);
+    background: var(--accent);
+  }
+
+  /* Run button */
+  .btn-run {
+    width: 100%;
+    margin-top: 20px;
+    padding: 14px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s, box-shadow 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-run:hover:not(:disabled) {
+    opacity: 0.9;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(0,212,255,0.25);
+  }
+
+  .btn-run:active { transform: translateY(0); }
+  .btn-run:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .btn-run .spinner {
+    display: inline-block;
+    width: 16px; height: 16px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    vertical-align: middle;
+    margin-right: 8px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Stability indicator */
+  .stability-bar {
+    margin-top: 16px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-family: var(--mono);
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.3s;
+  }
+
+  .stability-bar.stable { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); color: var(--accent3); }
+  .stability-bar.unstable { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: var(--danger); }
+  .stability-bar.warning { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); color: var(--warn); }
+
+  /* Results area */
+  .results-area { display: flex; flex-direction: column; gap: 24px; }
+
+  /* KPI cards */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+
+  @media (max-width: 1200px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+
+  .kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 20px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .kpi-card::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--kpi-color, var(--accent));
+  }
+
+  .kpi-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+  }
+
+  .kpi-value {
+    font-family: var(--mono);
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--kpi-color, var(--accent));
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .kpi-ic {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+  }
+
+  /* Validation table */
+  .validation-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--mono);
+    font-size: 13px;
+  }
+
+  .validation-table th {
+    text-align: left;
+    padding: 8px 12px;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .validation-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .validation-table tr:last-child td { border-bottom: none; }
+
+  .error-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+  }
+
+  .error-low { background: rgba(16,185,129,0.15); color: var(--accent3); }
+  .error-med { background: rgba(245,158,11,0.15); color: var(--warn); }
+  .error-high { background: rgba(239,68,68,0.15); color: var(--danger); }
+
+  /* Tabs for charts */
+  .tabs { display: flex; gap: 4px; margin-bottom: 16px; flex-wrap: wrap; }
+
+  .tab {
+    padding: 7px 14px;
+    border-radius: 6px;
+    font-family: var(--mono);
+    font-size: 11px;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-dim);
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .tab:hover { color: var(--text); border-color: var(--accent); }
+  .tab.active { background: rgba(0,212,255,0.1); border-color: var(--accent); color: var(--accent); }
+
+  /* Chart display */
+  .chart-container {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+    min-height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .chart-container img {
+    max-width: 100%;
+    border-radius: 8px;
+    display: block;
+  }
+
+  /* Empty/loading states */
+  .empty-state {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--text-dim);
+  }
+
+  .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.4; }
+  .empty-title { font-size: 18px; font-weight: 600; margin-bottom: 8px; color: var(--text-muted); }
+  .empty-sub { font-family: var(--mono); font-size: 12px; }
+
+  .loading-state {
+    text-align: center;
+    padding: 48px 24px;
+  }
+
+  .loading-bar {
+    width: 200px;
+    height: 3px;
+    background: var(--border);
+    border-radius: 3px;
+    margin: 16px auto 0;
+    overflow: hidden;
+  }
+
+  .loading-bar-inner {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    animation: loading 1.5s ease-in-out infinite;
+    border-radius: 3px;
+  }
+
+  @keyframes loading {
+    0% { width: 0%; margin-left: 0; }
+    50% { width: 70%; margin-left: 15%; }
+    100% { width: 0%; margin-left: 100%; }
+  }
+
+  /* Error message */
+  .error-msg {
+    background: rgba(239,68,68,0.08);
+    border: 1px solid rgba(239,68,68,0.3);
+    border-radius: 10px;
+    padding: 16px 20px;
+    color: var(--danger);
+    font-family: var(--mono);
+    font-size: 13px;
+  }
+
+  /* Optimum banner */
+  .optimum-banner {
+    background: rgba(16,185,129,0.08);
+    border: 1px solid rgba(16,185,129,0.25);
+    border-radius: 10px;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .optimum-banner .label {
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--accent3);
+    opacity: 0.7;
+    margin-bottom: 4px;
+  }
+
+  .optimum-banner .value {
+    font-family: var(--mono);
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--accent3);
+  }
+
+  /* Sensitivity mini-table */
+  .sens-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+
+  .sens-table th {
+    padding: 6px 10px;
+    text-align: center;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .sens-table td {
+    padding: 7px 10px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .sens-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+  .rho-cell {
+    border-radius: 4px;
+    padding: 2px 6px;
+  }
+
+  /* Two-column results grid */
+  .results-2col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+
+  @media (max-width: 1100px) { .results-2col { grid-template-columns: 1fr; } }
+
+  footer {
+    margin-top: 60px;
+    padding: 24px 0;
+    border-top: 1px solid var(--border);
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="header-inner">
+      <div class="logo-block">
+        <div class="logo-icon">⚙️</div>
+        <div class="logo-text">
+          <h1>TechClassUC</h1>
+          <p>Simulación del Sistema de Colas M/M/c</p>
+        </div>
+      </div>
+      <div class="status-badge">
+        <div class="status-dot"></div>
+        SimPy + Montecarlo
+      </div>
+    </div>
+  </header>
+
+  <div class="layout">
+    <!-- LEFT: Control panel -->
+    <aside>
+      <div class="panel">
+        <div class="panel-title">Parámetros</div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <div class="label-with-hint">
+              <label>λ — llegadas/hora</label>
+            </div>
+            <input type="number" id="lam" value="10" min="0.1" step="0.5">
+          </div>
+          <div class="form-group">
+            <label>μ — servicio/técnico/h</label>
+            <input type="number" id="mu" value="4" min="0.1" step="0.5">
+          </div>
+          <div class="form-group">
+            <label>c — técnicos</label>
+            <input type="number" id="c" value="3" min="1" step="1">
+          </div>
+          <div class="form-group">
+            <label>N — réplicas</label>
+            <input type="number" id="N" value="20" min="5" max="100" step="5">
+          </div>
+          <div class="form-group">
+            <label>T_sim (min)</label>
+            <input type="number" id="t_sim" value="480" min="60" step="60">
+          </div>
+          <div class="form-group">
+            <label>T_warm (min)</label>
+            <input type="number" id="t_warm" value="60" min="10" step="10">
+          </div>
+          <div class="form-group">
+            <label>Umbral Wq (min)</label>
+            <input type="number" id="umbral_wq" value="10" min="1" step="1">
+          </div>
+          <div class="form-group">
+            <label>Semilla</label>
+            <input type="number" id="semilla" value="42" min="0">
+          </div>
+        </div>
+
+        <div class="toggle-row">
+          <span class="toggle-label">Cola con prioridad (urgentes)</span>
+          <label class="toggle">
+            <input type="checkbox" id="prioridad">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <div class="toggle-row">
+          <span class="toggle-label">Modo rápido (sensibilidad reducida)</span>
+          <label class="toggle">
+            <input type="checkbox" id="rapido" checked>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <div id="stability-bar" class="stability-bar stable">
+          <span>ρ = 0.833</span>
+          <span>✓ ESTABLE</span>
+        </div>
+
+        <button class="btn-run" id="btn-run" onclick="ejecutarSimulacion()">
+          ▶ Ejecutar Simulación
+        </button>
+      </div>
+
+      <!-- Analítico snapshot -->
+      <div class="panel" style="margin-top:16px" id="analitico-panel" hidden>
+        <div class="panel-title">Analítico M/M/c</div>
+        <table class="validation-table" id="analitico-table"></table>
+      </div>
+    </aside>
+
+    <!-- RIGHT: Results -->
+    <main class="results-area">
+      <div id="results-container">
+        <div class="panel">
+          <div class="empty-state">
+            <div class="empty-icon">📊</div>
+            <div class="empty-title">Sin resultados aún</div>
+            <div class="empty-sub">Configura los parámetros y ejecuta la simulación</div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <footer>TechClassUC · Simulación M/M/c · SimPy + Montecarlo · Modelos de Simulación 2025</footer>
+</div>
+
+<script>
+  const API = 'http://localhost:5050';
+
+  // Live stability update
+  ['lam','mu','c'].forEach(id => {
+    document.getElementById(id).addEventListener('input', updateStability);
+  });
+
+  function updateStability() {
+    const lam = parseFloat(document.getElementById('lam').value) || 0;
+    const mu = parseFloat(document.getElementById('mu').value) || 0;
+    const c = parseInt(document.getElementById('c').value) || 1;
+    const bar = document.getElementById('stability-bar');
+    if (lam <= 0 || mu <= 0) { bar.className = 'stability-bar warning'; bar.innerHTML = '<span>—</span><span>Parámetros inválidos</span>'; return; }
+    const rho = lam / (c * mu);
+    if (rho >= 1) {
+      bar.className = 'stability-bar unstable';
+      bar.innerHTML = `<span>ρ = ${rho.toFixed(3)}</span><span>✗ INESTABLE</span>`;
+    } else if (rho > 0.85) {
+      bar.className = 'stability-bar warning';
+      bar.innerHTML = `<span>ρ = ${rho.toFixed(3)}</span><span>⚠ ALTA CARGA</span>`;
+    } else {
+      bar.className = 'stability-bar stable';
+      bar.innerHTML = `<span>ρ = ${rho.toFixed(3)}</span><span>✓ ESTABLE</span>`;
+    }
+  }
+
+  async function ejecutarSimulacion() {
+    const btn = document.getElementById('btn-run');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Simulando...';
+
+    const body = {
+      lam: parseFloat(document.getElementById('lam').value),
+      mu: parseFloat(document.getElementById('mu').value),
+      c: parseInt(document.getElementById('c').value),
+      N: parseInt(document.getElementById('N').value),
+      t_sim: parseFloat(document.getElementById('t_sim').value),
+      t_warm: parseFloat(document.getElementById('t_warm').value),
+      umbral_wq: parseFloat(document.getElementById('umbral_wq').value),
+      semilla: parseInt(document.getElementById('semilla').value),
+      prioridad: document.getElementById('prioridad').checked,
+      rapido: document.getElementById('rapido').checked,
+    };
+
+    showLoading();
+
+    try {
+      const res = await fetch(`${API}/api/simular`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+
+      if (data.error) {
+        showError(data.mensaje);
+      } else {
+        renderResults(data);
+      }
+    } catch (e) {
+      showError('No se pudo conectar con el servidor. Asegúrate de que app.py está corriendo en puerto 5050.\n\n' + e.message);
+    }
+
+    btn.disabled = false;
+    btn.innerHTML = '▶ Ejecutar Simulación';
+  }
+
+  function showLoading() {
+    document.getElementById('results-container').innerHTML = `
+      <div class="panel">
+        <div class="loading-state">
+          <div style="font-size:32px;margin-bottom:12px">⚙️</div>
+          <div style="font-family:var(--mono);color:var(--text-dim);font-size:13px">Ejecutando simulación...</div>
+          <div style="font-family:var(--mono);color:var(--text-muted);font-size:11px;margin-top:6px">SimPy · Montecarlo · Sensibilidad</div>
+          <div class="loading-bar"><div class="loading-bar-inner"></div></div>
+        </div>
+      </div>`;
+  }
+
+  function showError(msg) {
+    document.getElementById('results-container').innerHTML = `
+      <div class="error-msg">⚠ ${msg.replace(/\n/g,'<br>')}</div>`;
+  }
+
+  function renderResults(data) {
+    const mc = data.montecarlo;
+    const an = data.analitico;
+    const comp = data.comparacion;
+    const opt = data.c_optimo;
+    const graficas = data.graficas;
+    const sens = data.sensibilidad;
+
+    // ─── Analítico panel ───
+    const apanel = document.getElementById('analitico-panel');
+    apanel.hidden = false;
+    document.getElementById('analitico-table').innerHTML = `
+      <tr><th>Métrica</th><th>Valor</th></tr>
+      <tr><td>ρ</td><td style="color:var(--accent)">${an.rho}</td></tr>
+      <tr><td>P₀</td><td>${an.P0}</td></tr>
+      <tr><td>Wq (min)</td><td>${an.Wq}</td></tr>
+      <tr><td>Lq</td><td>${an.Lq}</td></tr>
+      <tr><td>L</td><td>${an.L}</td></tr>
+      <tr><td>W (min)</td><td>${an.W}</td></tr>
+    `;
+
+    // ─── Build results HTML ───
+    let html = '';
+
+    // KPI grid
+    html += `<div class="kpi-grid">
+      <div class="kpi-card" style="--kpi-color:var(--accent)">
+        <div class="kpi-label">Wq — Espera en cola</div>
+        <div class="kpi-value">${mc.wq_media.toFixed(2)}<span style="font-size:14px;opacity:0.6"> min</span></div>
+        <div class="kpi-ic">IC 95% [${mc.wq_ic95[0].toFixed(3)}, ${mc.wq_ic95[1].toFixed(3)}]</div>
+      </div>
+      <div class="kpi-card" style="--kpi-color:var(--accent2)">
+        <div class="kpi-label">ρ — Utilización</div>
+        <div class="kpi-value">${(mc.rho_media * 100).toFixed(1)}<span style="font-size:14px;opacity:0.6">%</span></div>
+        <div class="kpi-ic">IC 95% [${(mc.rho_ic95[0]*100).toFixed(1)}%, ${(mc.rho_ic95[1]*100).toFixed(1)}%]</div>
+      </div>
+      <div class="kpi-card" style="--kpi-color:var(--accent3)">
+        <div class="kpi-label">Lq — Clientes en cola</div>
+        <div class="kpi-value">${mc.lq_media.toFixed(3)}</div>
+        <div class="kpi-ic">IC 95% [${mc.lq_ic95[0].toFixed(3)}, ${mc.lq_ic95[1].toFixed(3)}]</div>
+      </div>
+      <div class="kpi-card" style="--kpi-color:var(--warn)">
+        <div class="kpi-label">Ws — Tiempo sistema</div>
+        <div class="kpi-value">${mc.ws_media.toFixed(2)}<span style="font-size:14px;opacity:0.6"> min</span></div>
+        <div class="kpi-ic">IC 95% [${mc.ws_ic95[0].toFixed(3)}, ${mc.ws_ic95[1].toFixed(3)}]</div>
+      </div>
+    </div>`;
+
+    // Optimum + Replicas info
+    html += `<div style="display:grid;grid-template-columns:1fr auto;gap:12px;align-items:start">`;
+    if (opt.valor !== null) {
+      html += `<div class="optimum-banner">
+        <div>
+          <div class="label">Recomendación — c óptimo</div>
+          <div class="value">${opt.valor} técnicos → Wq = ${opt.wq_logrado.toFixed(2)} min ≤ ${opt.umbral} min</div>
+        </div>
+        <div style="font-size:28px">✅</div>
+      </div>`;
+    } else {
+      html += `<div class="optimum-banner" style="--accent3:var(--warn)">
+        <div>
+          <div class="label">c óptimo no encontrado</div>
+          <div class="value">Ningún c evaluado satisface Wq ≤ ${opt.umbral} min</div>
+        </div>
+      </div>`;
+    }
+    html += `<div class="panel" style="padding:14px 18px;min-width:160px">
+      <div class="kpi-label">N mínimo (ε≤5%)</div>
+      <div style="font-family:var(--mono);font-size:24px;color:var(--accent);margin:6px 0">${mc.n_minimo_replicas}</div>
+      <div style="font-family:var(--mono);font-size:11px;color:var(--text-dim)">réplicas / ${mc.N} usadas</div>
+    </div></div>`;
+
+    // Validation table
+    html += `<div class="panel">
+      <div class="panel-title">Validación Analítica vs Simulación</div>
+      <table class="validation-table">
+        <tr><th>Métrica</th><th>Analítico</th><th>Simulado</th><th>Error %</th></tr>`;
+    for (const [k,v] of Object.entries(comp)) {
+      const cls = v.error_pct < 5 ? 'error-low' : v.error_pct < 15 ? 'error-med' : 'error-high';
+      html += `<tr>
+        <td style="color:var(--text)">${k}</td>
+        <td>${v.analitico.toFixed(4)}</td>
+        <td>${v.simulado.toFixed(4)}</td>
+        <td><span class="error-badge ${cls}">${v.error_pct.toFixed(2)}%</span></td>
+      </tr>`;
+    }
+    html += `</table></div>`;
+
+    // Charts
+    const chartDefs = [
+      { key: 'evolucion', label: '1. Evolución N(t)' },
+      { key: 'histograma_wq', label: '2. Histograma Wq' },
+      { key: 'wq_vs_c', label: '3. Wq vs c' },
+      { key: 'rho_vs_lam', label: '4. ρ vs λ' },
+      { key: 'tcl', label: '5. TCL' },
+      { key: 'heatmap_wq', label: '6. Heatmap Wq' },
+      { key: 'heatmap_rho', label: '7. Heatmap ρ' },
+    ];
+
+    html += `<div class="panel">
+      <div class="panel-title">Gráficas</div>
+      <div class="tabs">`;
+    chartDefs.forEach((c,i) => {
+      html += `<button class="tab ${i===0?'active':''}" onclick="switchChart('${c.key}',this)">${c.label}</button>`;
+    });
+    html += `</div><div class="chart-container" id="chart-display">
+      <img src="data:image/png;base64,${graficas[chartDefs[0].key]}" alt="Gráfica">
+    </div></div>`;
+
+    // Sensitivity table
+    if (sens && sens.tabla && sens.tabla.length > 0) {
+      html += `<div class="panel">
+        <div class="panel-title">Tabla de Sensibilidad (c × λ)</div>
+        <div style="overflow-x:auto">
+        <table class="sens-table">
+          <tr><th>c</th><th>λ</th><th>ρ teórico</th><th>ρ simulado</th><th>Wq (min)</th><th>Lq</th></tr>`;
+      sens.tabla.forEach(row => {
+        const rhoTeo = row.lam / (row.c * (data.parametros.mu));
+        const rhoColor = rhoTeo >= 1 ? 'rgba(239,68,68,0.15)' : rhoTeo > 0.85 ? 'rgba(245,158,11,0.15)' : 'rgba(16,185,129,0.15)';
+        const rhoTxt = rhoTeo >= 1 ? 'var(--danger)' : rhoTeo > 0.85 ? 'var(--warn)' : 'var(--accent3)';
+        html += `<tr>
+          <td style="color:var(--accent)">${row.c}</td>
+          <td>${row.lam.toFixed(1)}</td>
+          <td><span class="rho-cell" style="background:${rhoColor};color:${rhoTxt}">${rhoTeo.toFixed(3)}</span></td>
+          <td>${row.rho !== null ? row.rho.toFixed(4) : '—'}</td>
+          <td style="color:var(--text)">${row.wq !== null ? row.wq.toFixed(3) : '—'}</td>
+          <td>${row.lq !== null ? row.lq.toFixed(3) : '—'}</td>
+        </tr>`;
+      });
+      html += `</table></div></div>`;
+    }
+
+    document.getElementById('results-container').innerHTML = html;
+
+    // Store graficas for switching
+    window._graficas = graficas;
+  }
+
+  function switchChart(key, btn) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('chart-display').innerHTML =
+      `<img src="data:image/png;base64,${window._graficas[key]}" alt="Gráfica">`;
+  }
+
+  // Init stability
+  updateStability();
+</script>
+</body>
+</html>
