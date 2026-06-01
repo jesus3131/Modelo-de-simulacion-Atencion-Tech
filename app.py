@@ -19,7 +19,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 
 from analitico import calcular_mmc, comparar_con_simulacion
@@ -41,6 +41,11 @@ CORS(app)
 
 GRAFICAS_DIR = os.path.join(os.path.dirname(__file__), "graficas_web")
 os.makedirs(GRAFICAS_DIR, exist_ok=True)
+
+
+@app.route("/")
+def index():
+    return send_from_directory(os.path.dirname(__file__), "index.html")
 
 
 def fig_to_base64(fig):
